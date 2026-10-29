@@ -1,0 +1,8 @@
+{
+ "gerado_em": "2026-01-01T00:00:00",
+ "relacoes": {
+  "contato_pf_ex.cmpo_tipo_tel": [{"origem": "psdc_raw.cntto_raw.tipo_tel", "n": 12}, {"origem": "psdc_raw.cntto_raw.num_tel", "n": 3}],
+  "basico_pf_ex.cmpo_nome_soc": [{"origem": "psdc_raw.bsico_raw.nome_social", "n": 5}]
+ },
+ "erros": []
+}

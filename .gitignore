@@ -1,0 +1,23 @@
+# cdflw: dados da empresa e configuracao pessoal nunca entram no git
+cdflw/base/
+cdflw/dados/
+cdflw/saida/
+cdflw/config.local.toml
+cdflw/fronteira.txt
+.github/skills/regras-cadflow/references/
+
+# Databricks (extensao e bundle): estado da maquina, nao da equipe
+.databricks/
+.databricks.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Office e sistema
+~$*.xlsx
+Thumbs.db
+.DS_Store

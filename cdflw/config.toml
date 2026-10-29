@@ -1,0 +1,90 @@
+# Configuracao do cdflw. Tudo que e especifico da sua maquina/empresa fica aqui.
+# Caminhos relativos sao resolvidos a partir desta pasta (cdflw/).
+
+[databricks]
+# Vazio = le de ../../.databricks/project.json (gravado pela extensao Databricks)
+profile = ""
+cluster_id = ""
+# Opcional: id de um SQL warehouse. Se vazio, a linhagem roda no cluster acima.
+warehouse_id = ""
+# Preenchidos pela linha de instalacao (ou: python -m cdflw configurar --uc catalogo.schema)
+catalogo = ""
+schema = ""
+# Consultar system.access.column_lineage no /atualizar (precisa de permissao)
+linhagem = true
+# Tabelas sob demanda (python -m cdflw incluir-tabela catalogo.schema.tabela):
+# sufixos/nomes de schema preferidos, do mais oficial para o menos (ex.: ["_csl", "_ing"]). Vazio = sem preferencia.
+schemas_preferidos = []
+# schemas onde procurar homonimas quando o information_schema nao estiver acessivel (ex.: ["cat.schema_a", "cat.schema_b"])
+schemas_busca = []
+# usar system.query.history como sinal de "alto uso" (precisa de permissao); dias de janela
+usar_query_history = true
+dias_uso = 30
+# Cluster all-purpose demora para subir. auto_ligar_cluster = true: os comandos de dado pedem para ligar e esperam
+# ate espera_cluster_s, imprimindo o estado a cada intervalo_poll_s; se ainda nao subiu, saem com codigo 2 ("rode de novo").
+# Metadados (tabela, campo, incluir-tabela) nunca ligam o cluster. Um SQL warehouse configurado e sempre preferido.
+auto_ligar_cluster = true
+espera_cluster_s = 240
+intervalo_poll_s = 15
+# Teste no dado: acima deste total de linhas, perfis e exemplos usam TABLESAMPLE
+max_linhas_sem_amostra = 5000000
+max_valores_frequentes = 10
+# Amostras de valores: mascaradas por padrao (digitos->9, letras->X). false = valores reais.
+mascarar_amostras = true
+
+[caminhos]
+base = "base"                 # voce copia aqui os .md da Governanca e o export do CadFlow
+dados = "dados"               # gerado pelo /atualizar
+saida = "saida"               # regras novas
+excel = "saida/regras_novas.xlsx"
+fichas = "saida/fichas"
+# Raiz do repositorio (a pasta que o VS Code abre): e onde ficam .github, .vscode e .databricks
+raiz_workspace = ".."
+
+[copilot]
+modelo = "Claude Sonnet 5.5"
+
+[trilha]
+# Registro da conversa (saida/_trilha.jsonl + _trilha.html ao vivo): o que o agente consultou, leu, concluiu,
+# perguntou e gravou. Para validar o agente. false = nada e gravado e o agente nao anota.
+ativa = true
+
+[analise]
+# Redundancia: similaridade minima de campos (Jaccard) para apontar um par
+limiar_redundancia = 0.6
+# Dimensoes de qualidade: omita para usar o padrao (completude, validade, consistencia, unicidade, acuracia, atualidade, integridade)
+# [analise.dimensoes.completude]
+# tipos = ["Enriquecimento"]
+# palavras = ["vazio", "preench"]
+
+[regras]
+tipos = ["Negócio", "Validação", "Enriquecimento", "Limpeza", "Retroalimentação", "Regra Geral"]
+criticidades = ["Baixa", "Média", "Alta", "Muito Alta"]
+tipos_pessoa = ["PF", "PJ", "PF,PJ"]
+# Sufixo de tipo no codigo da regra (PFX.TT.n)
+sufixo_tipo = { "Negócio" = "RN", "Validação" = "RV", "Enriquecimento" = "RE", "Limpeza" = "RL", "Retroalimentação" = "RR", "Regra Geral" = "RG" }
+# Verbos aceitos no inicio da Logica de Execucao, por tipo
+verbos = { "Negócio" = ["verifica", "garante", "consolida", "agrupa"], "Validação" = ["verifica", "valida", "confere"], "Enriquecimento" = ["enriquece", "preenche", "completa", "recupera"], "Limpeza" = ["apaga", "remove", "limpa", "saneia", "padroniza"], "Retroalimentação" = ["retroalimenta", "equaliza", "atualiza", "replica", "sincroniza"], "Regra Geral" = ["define", "designa", "consolida", "classifica"] }
+# Fontes e fatos de dominio que precisam sobreviver do pedido ao texto final
+fatos_dominio = ["PSDC", "RBRF", "Receita Federal", "Quod", "Bureau", "INSS", "Folha de Pagamentos", "Extrato", "PF", "PJ", "comercial", "residencial", "celular", "casado", "união estável", "titular", "cônjuge", "DDD", "CPF", "CNPJ"]
+# Formulas vazias proibidas no Objetivo
+objetivo_proibido = ["garantir a qualidade", "melhorar a qualidade", "assegurar a qualidade", "garantir a consistência", "adequar os dados", "tratar os dados", "corrigir os dados"]
+# Palavras em maiusculas que NAO sao siglas de campo
+nao_siglas = ["SE", "ENTAO", "ENTÃO", "E", "OU", "NAO", "NÃO", "PSDC", "RBRF", "INSS", "QUOD", "PF", "PJ", "CPF", "CNPJ", "DDD", "DDI", "UF", "RN", "RV", "RE", "RL", "RR", "RG", "ID", "LGPD", "MDM", "BPMN", "TODAS", "TODOS"]
+
+[mapa_tabelas]
+# Sigla de tabela do CadFlow -> prefixo de codigo (3 letras). O /atualizar sugere; voce confirma.
+# Exemplo: INFO_CNTTO = "ICT"
+# [mapa_tabelas.prefixo]
+# INFO_CNTTO = "ICT"
+# INFO_BSICO = "IBS"
+# Sigla de tabela do CadFlow -> tabela do Unity Catalog (sem catalogo.schema). O /atualizar infere; voce confirma.
+# [mapa_tabelas.uc]
+# INFO_CNTTO = "contato_pf_ex"
+
+[excel]
+# Ordem das colunas em saida/regras_novas.xlsx = ordem do formulario do CadFlow. Ajuste se o formulario mudar.
+colunas = ["codigo_regra", "codigo_regra_comp", "nome_regra", "tipo_regra", "criticidade", "tabela", "tipo_pessoa_afetada", "descricao_regra", "objetivo", "criterio_aplicacao", "logica_execucao", "resultado", "exemplo", "acao_dado_valido", "acao_dado_invalido", "regras_encadeadas", "codigos_regra_geral", "observacao", "pontos_atencao", "metrica_monitoramento", "teste_no_dado", "tabela_uc", "lote", "status_cdflw", "criado_em", "modelo_usado"]
+# Padrao da Governanca: nenhuma regra cita outra. A coluna regras_encadeadas sai VAZIA (false); o vinculo
+# entre as regras de uma familia fica so no registro interno (grafo, desfazer --cadeia). true = preencher.
+regras_encadeadas_na_planilha = false

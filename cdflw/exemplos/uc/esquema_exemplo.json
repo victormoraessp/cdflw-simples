@@ -1,0 +1,39 @@
+{
+ "snapshot_id": "2026-01-01-sintetico",
+ "gerado_em": "2026-01-01T00:00:00",
+ "catalogo": "cat_exemplo",
+ "schema": "esquema_exemplo",
+ "tabelas": {
+  "contato_pf_ex": {
+   "comentario": "Informacoes de contato do cliente pessoa fisica (exemplo sintetico)",
+   "tipo_tabela": "MANAGED",
+   "colunas": [
+    {"nome": "cmpo_cod_cli", "tipo": "bigint", "comentario": "Codigo do cliente"},
+    {"nome": "cmpo_ddd_tel", "tipo": "string", "comentario": ""},
+    {"nome": "cmpo_num_tel", "tipo": "string", "comentario": ""},
+    {"nome": "cmpo_tipo_tel", "tipo": "string", "comentario": "Tipo do telefone (celular, fixo)"},
+    {"nome": "cmpo_dt_atlz", "tipo": "date", "comentario": ""}
+   ]
+  },
+  "basico_pf_ex": {
+   "comentario": "Informacoes basicas do cliente pessoa fisica (exemplo sintetico)",
+   "tipo_tabela": "MANAGED",
+   "colunas": [
+    {"nome": "cmpo_cod_cli", "tipo": "bigint", "comentario": "Codigo do cliente"},
+    {"nome": "cmpo_nome_soc", "tipo": "string", "comentario": ""},
+    {"nome": "cmpo_sexo", "tipo": "string", "comentario": ""},
+    {"nome": "cmpo_nac", "tipo": "string", "comentario": "Codigo da nacionalidade"},
+    {"nome": "cmpo_dt_nasc", "tipo": "date", "comentario": ""}
+   ]
+  },
+  "basico_pj_ex": {
+   "comentario": "Informacoes basicas do cliente pessoa juridica (exemplo sintetico)",
+   "tipo_tabela": "MANAGED",
+   "colunas": [
+    {"nome": "cmpo_cod_cli", "tipo": "bigint", "comentario": "Codigo do cliente"},
+    {"nome": "cmpo_captl_soc", "tipo": "decimal(15,2)", "comentario": ""},
+    {"nome": "cmpo_dt_abert", "tipo": "date", "comentario": ""}
+   ]
+  }
+ }
+}
