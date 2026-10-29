@@ -993,7 +993,7 @@ def problemas_markdown(texto: str) -> list[str]:
 
 def _arquivos_md_markdown():
     for p in sorted(list(RAIZ.rglob("*.md")) + list((REPO / ".github").rglob("*.md")) + [REPO / "README.md"]):
-        if not (IGNORAR & set(p.relative_to(RAIZ).parts)):
+        if not (IGNORAR & set(p.relative_to(REPO).parts)):
             yield p
 
 
