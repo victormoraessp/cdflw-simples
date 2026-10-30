@@ -66,7 +66,8 @@ python -m cdflw instalar
 Copie os arquivos da Governança para `cdflw\base\`, recarregue a janela do VS Code (Chat > Agent
 Customizations: Agents 1, Skills 4) e rode `/atualizar` no chat. Pronto: `/nova-regra`.
 
-Profile e cluster vêm da extensão Databricks conectada na raiz (`.databricks\project.json`). Sem ela:
+Profile e cluster vêm da extensão Databricks conectada na raiz (`.databricks\project.json` ou, no modo
+bundle, `.databricks\.databricks.env` + o host correspondente em `~\.databrickscfg`). Sem ela:
 `python -m cdflw configurar --local --profile <profile> --cluster-nome "<cluster>"`.
 
 ## Atualizar

@@ -1310,3 +1310,33 @@ def test_produto_nao_diz_de_onde_veio():
             if _ORIGEM.search(linha):
                 ruins.append(f"{p.relative_to(REPO).as_posix()}:{i}")
     assert not ruins, ruins
+
+
+def test_config_le_databricks_env_modo_bundle(projeto, tmp_path, monkeypatch):
+    """Extensao v2 (bundle) nao grava project.json: profile vem do .databricks.env ou do host em ~/.databrickscfg."""
+    ws = projeto.raiz_workspace
+    (ws / ".databricks" / "project.json").unlink()
+    cfgfile = tmp_path / "databrickscfg"
+    cfgfile.write_text("[DEFAULT]\n\n[platA]\nhost = https://adb-111.azuredatabricks.net/\n\n[platB]\nhost = https://adb-222.azuredatabricks.net\n", encoding="utf-8")
+    monkeypatch.setenv("DATABRICKS_CONFIG_FILE", str(cfgfile))
+    env = ws / ".databricks" / ".databricks.env"
+    # 1) so host (OAuth interno da extensao): casa pelo host, ignorando barra final e maiusculas
+    env.write_text("DATABRICKS_HOST=https://ADB-222.azuredatabricks.net\nDATABRICKS_AUTH_TYPE=metadata-service\nDATABRICKS_CLUSTER_ID=0806-000000-abc\n", encoding="utf-8")
+    c = nucleo.carregar(projeto.raiz)
+    assert c.profile == "platB" and c.cluster_id == "0806-000000-abc" and c.aviso_profile() == ""
+    assert "host do .databricks" in c.profile_resolvido()[1]
+    # 2) DATABRICKS_CONFIG_PROFILE explicito vence o host
+    env.write_text('DATABRICKS_CONFIG_PROFILE="platA"\nDATABRICKS_HOST=https://adb-222.azuredatabricks.net\n', encoding="utf-8")
+    assert nucleo.carregar(projeto.raiz).profile == "platA"
+    # 3) sem .env: host do databricks.yml
+    env.unlink()
+    (ws / "databricks.yml").write_text("bundle:\n  name: x\nworkspace:\n  host: https://adb-111.azuredatabricks.net\n", encoding="utf-8")
+    c = nucleo.carregar(projeto.raiz)
+    assert c.profile == "platA" and "databricks.yml" in c.profile_resolvido()[1] and c.cluster_id == ""
+    # 4) host desconhecido: cai em DEFAULT, que esta vazio no cfg -> aviso com a lista e o comando
+    (ws / "databricks.yml").write_text("workspace:\n  host: https://adb-999.azuredatabricks.net\n", encoding="utf-8")
+    c = nucleo.carregar(projeto.raiz)
+    assert c.profile == "DEFAULT" and "platA, platB" in c.aviso_profile() and "configurar --local --profile" in c.aviso_profile()
+    # 5) config.local.toml vence tudo
+    nucleo.gravar_valor(projeto.raiz, "databricks", "profile", "platB", "config.local.toml")
+    assert nucleo.carregar(projeto.raiz).profile_resolvido() == ("platB", "config.toml/config.local.toml")

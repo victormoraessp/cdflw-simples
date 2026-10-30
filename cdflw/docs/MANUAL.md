@@ -300,6 +300,7 @@ história. **Colunas do Excel**: `[excel].colunas` e, em `nucleo.py`, `_DE_PARA`
 | `C2b_sigla_desconhecida` | sigla não existe no snapshot nem no glossário | conferir grafia com `campo`; se o catálogo mudou, `/atualizar` |
 | `C9_codigo_repetido` numa regra que quero refazer | a versão anterior ainda está gravada | nunca invente outro código: `/refazer <codigo>` |
 | `sem snapshot do catalogo` | nunca rodou `/atualizar` ou falhou | `/atualizar`; ver profile e proxy |
+| `has no DEFAULT profile configured` ou `profile ... nao existe em ~/.databrickscfg` | a extensão Databricks em modo bundle não grava `project.json`; o cdflw tenta o host de `.databricks\.databricks.env` e do `databricks.yml` em `~\.databrickscfg`, e não achou | `python -m cdflw status` mostra os profiles disponíveis; fixe o seu com `configurar --local --profile <nome>` |
 | a regra marcou 99% dos registros no teste | condição invertida ou pedido errado | o agente para e pergunta; responda antes de gravar |
 | Skills `databricks-*` sendo acionadas | pacote AI tools instalado | o agente é instruído a não usá-las |
 
@@ -307,7 +308,8 @@ história. **Colunas do Excel**: `[excel].colunas` e, em `nucleo.py`, `_DE_PARA`
 
 - Nada da empresa sai da máquina: `cdflw\base`, `dados`, `saida` e `config.local.toml` ficam locais e
   fora do git.
-- O Databricks é acessado com o profile da extensão (`~/.databrickscfg`); o cdflw não guarda credencial.
+- O Databricks é acessado com um profile do `~/.databrickscfg` (o da extensão, ou o de mesmo host quando a
+  extensão está em modo bundle); o cdflw não guarda credencial.
 - Custo de Copilot: uma conversa por regra, com o modelo fixo do agente. Os comandos não gastam
   crédito. O `/atualizar` quase não gasta (só a mensagem que resume a saída).
 

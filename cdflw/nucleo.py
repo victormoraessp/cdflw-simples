@@ -316,10 +316,17 @@ class Config:
         return self.raiz_workspace / ".github"
 
     # --- databricks -----------------------------------------------------
+    # A extensao Databricks do VS Code grava o que esta conectado em .databricks/ na raiz do repositorio:
+    #   project.json     (modo antigo)  -> profile e clusterId
+    #   .databricks.env  (modo bundle)  -> DATABRICKS_HOST, DATABRICKS_CLUSTER_ID e, se autenticar por profile,
+    #                                      DATABRICKS_CONFIG_PROFILE; com OAuth interno (metadata-service) nao ha profile,
+    #                                      e o cdflw descobre o profile pelo host em ~/.databrickscfg.
+    def _pastas_databricks(self) -> list[Path]:
+        return [self.raiz_workspace / ".databricks", self.raiz / ".databricks"]
+
     def _project_json(self) -> dict[str, Any]:
-        """A extensao Databricks grava profile e cluster em .databricks/project.json."""
-        for candidato in (self.raiz_workspace / ".databricks" / "project.json",
-                          self.raiz / ".databricks" / "project.json"):
+        for pasta in self._pastas_databricks():
+            candidato = pasta / "project.json"
             if candidato.exists():
                 try:
                     return json.loads(candidato.read_text(encoding="utf-8"))
@@ -327,14 +334,106 @@ class Config:
                     return {}
         return {}
 
+    def _databricks_env(self) -> dict[str, str]:
+        for pasta in self._pastas_databricks():
+            candidato = pasta / ".databricks.env"
+            if candidato.exists():
+                valores: dict[str, str] = {}
+                try:
+                    for linha in candidato.read_text(encoding="utf-8").splitlines():
+                        linha = linha.strip()
+                        if not linha or linha.startswith("#") or "=" not in linha:
+                            continue
+                        chave, valor = linha.split("=", 1)
+                        valores[chave.strip()] = valor.strip().strip('"').strip("'")
+                except OSError:
+                    return {}
+                return valores
+        return {}
+
+    def _host_bundle(self) -> str:
+        """workspace.host do databricks.yml (bundle), sem depender de PyYAML: a primeira linha 'host:'."""
+        for pasta in (self.raiz_workspace, self.raiz):
+            arq = pasta / "databricks.yml"
+            if arq.exists():
+                try:
+                    m = re.search(r"^\s*host:\s*['\"]?(https?://[^\s'\"#]+)", arq.read_text(encoding="utf-8"), re.M)
+                except OSError:
+                    return ""
+                return m.group(1) if m else ""
+        return ""
+
+    @staticmethod
+    def profiles_databrickscfg() -> dict[str, str]:
+        """{profile: host} do ~/.databrickscfg (ou do arquivo em DATABRICKS_CONFIG_FILE)."""
+        import configparser
+        import os
+        arq = Path(os.environ.get("DATABRICKS_CONFIG_FILE") or Path.home() / ".databrickscfg")
+        if not arq.exists():
+            return {}
+        cp = configparser.ConfigParser(interpolation=None)
+        try:
+            cp.read(arq, encoding="utf-8")
+        except (OSError, configparser.Error):
+            return {}
+        perfis = {secao: cp[secao].get("host", "").strip() for secao in cp.sections()}
+        if cp.defaults().get("host"):  # configparser nao lista [DEFAULT] em sections()
+            perfis["DEFAULT"] = cp.defaults()["host"].strip()
+        return perfis
+
+    @staticmethod
+    def _mesmo_host(a: str, b: str) -> bool:
+        def norm(h: str) -> str:
+            return re.sub(r"^https?://", "", h.strip().lower()).rstrip("/")
+        return bool(a) and bool(b) and norm(a) == norm(b)
+
+    def _profile_por_host(self, host: str) -> str:
+        if not host:
+            return ""
+        for nome, h in self.profiles_databrickscfg().items():
+            if self._mesmo_host(h, host):
+                return nome
+        return ""
+
+    def profile_resolvido(self) -> tuple[str, str]:
+        """(profile, de onde veio). Ordem: config(.local).toml > project.json > DATABRICKS_CONFIG_PROFILE do
+        .databricks.env > profile do ~/.databrickscfg com o host do .databricks.env > idem com o host do
+        databricks.yml > DEFAULT."""
+        if self.databricks.get("profile"):
+            return self.databricks["profile"], "config.toml/config.local.toml"
+        pj = self._project_json()
+        if pj.get("profile"):
+            return pj["profile"], ".databricks/project.json"
+        env = self._databricks_env()
+        if env.get("DATABRICKS_CONFIG_PROFILE"):
+            return env["DATABRICKS_CONFIG_PROFILE"], ".databricks/.databricks.env"
+        por_host = self._profile_por_host(env.get("DATABRICKS_HOST", ""))
+        if por_host:
+            return por_host, "host do .databricks/.databricks.env em ~/.databrickscfg"
+        por_host = self._profile_por_host(self._host_bundle())
+        if por_host:
+            return por_host, "host do databricks.yml em ~/.databrickscfg"
+        return "DEFAULT", "padrao (nada configurado)"
+
     @property
     def profile(self) -> str:
-        return self.databricks.get("profile") or self._project_json().get("profile", "") or "DEFAULT"
+        return self.profile_resolvido()[0]
+
+    def aviso_profile(self) -> str:
+        """Vazio quando o profile existe em ~/.databrickscfg; senao, o que fazer."""
+        nome, origem = self.profile_resolvido()
+        existentes = self.profiles_databrickscfg()
+        if nome in existentes:
+            return ""
+        lista = ", ".join(sorted(existentes)) or "(nenhum)"
+        return (f"profile '{nome}' ({origem}) nao existe em ~/.databrickscfg; profiles disponiveis: {lista}. "
+                f"Rode: python -m cdflw configurar --local --profile <nome>")
 
     @property
     def cluster_id(self) -> str:
         pj = self._project_json()
-        return self.databricks.get("cluster_id") or pj.get("clusterId", "") or pj.get("cluster_id", "")
+        return (self.databricks.get("cluster_id") or pj.get("clusterId", "") or pj.get("cluster_id", "")
+                or self._databricks_env().get("DATABRICKS_CLUSTER_ID", ""))
 
     @property
     def warehouse_id(self) -> str:

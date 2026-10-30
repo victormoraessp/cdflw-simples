@@ -236,7 +236,10 @@ def cmd_instalar(cfg: nucleo.Config, a) -> int:
         _p(f"ATENCAO: faltam no {cfg.copilot_fonte}: {', '.join(faltam)} (copie os arquivos do Copilot para la)")
     else:
         _p(f"Copilot: agente e skills encontrados em {cfg.copilot_fonte}; instrucoes e settings ajustados")
-    _p(f"Databricks: profile '{cfg.profile}', cluster '{cfg.cluster_id or '(nao encontrado)'}', {cfg.catalogo or '?'}.{cfg.schema or '?'}")
+    nome_profile, origem_profile = cfg.profile_resolvido()
+    _p(f"Databricks: profile '{nome_profile}' ({origem_profile}), cluster '{cfg.cluster_id or '(nao encontrado)'}', {cfg.catalogo or '?'}.{cfg.schema or '?'}")
+    if cfg.aviso_profile():
+        _p(f"  ATENCAO: {cfg.aviso_profile()}")
     if not cfg.catalogo or not cfg.schema:
         _p("  ATENCAO: catalogo/schema vazios. Rode: python -m cdflw configurar --uc catalogo.schema")
     _p()
@@ -303,7 +306,9 @@ def cmd_configurar(cfg: nucleo.Config, a) -> int:
                 gv("mapa_tabelas.uc", sig, v["tabela_uc"]); n += 1
         _p(f"mapa: {n} valor(es) gravados em config.toml ([mapa_tabelas.prefixo] e [mapa_tabelas.uc]). Edite la o que discordar.")
     cfg = nucleo.carregar(cfg.raiz)
-    _p(f"config.toml: catalogo.schema = {cfg.catalogo or '?'}.{cfg.schema or '?'} | profile = {cfg.profile} | cluster = {cfg.cluster_id or '?'} | warehouse = {cfg.warehouse_id or '-'} | modelo = {cfg.modelo} | mapa confirmado: {len(cfg.prefixos)} prefixos, {len(cfg.mapa_uc)} tabelas")
+    if cfg.aviso_profile():
+        _p(f"ATENCAO: {cfg.aviso_profile()}")
+    _p(f"config.toml: catalogo.schema = {cfg.catalogo or '?'}.{cfg.schema or '?'} | profile = {cfg.profile} ({cfg.profile_resolvido()[1]}) | cluster = {cfg.cluster_id or '?'} | warehouse = {cfg.warehouse_id or '-'} | modelo = {cfg.modelo} | mapa confirmado: {len(cfg.prefixos)} prefixos, {len(cfg.mapa_uc)} tabelas")
     return 0
 
 
@@ -349,7 +354,7 @@ def cmd_recursos(cfg: nucleo.Config, a) -> int:
     return 0
 
 
-VERSAO = "2026-10-29 17:00"
+VERSAO = "2026-10-30 10:00"
 
 
 def _versao(cfg: nucleo.Config) -> str:
@@ -372,6 +377,10 @@ def cmd_status(cfg: nucleo.Config, a) -> int:
         for lote, cods in list(por_lote.items())[-6:]:
             _p(f"  lote {lote}: " + ", ".join(cods))
     _p(f"catalogo: {snap.get('catalogo', '?')}.{snap.get('schema', '?')} snapshot={snap.get('snapshot_id', 'nenhum')} tabelas={len(snap.get('tabelas', {}))} linhagem={len(lin.get('relacoes', {}))} colunas com origem")
+    nome_profile, origem_profile = cfg.profile_resolvido()
+    _p(f"databricks: profile={nome_profile} ({origem_profile}) cluster={cfg.cluster_id or '?'}")
+    if cfg.aviso_profile():
+        _p(f"  ATENCAO: {cfg.aviso_profile()}")
     extras = catalogo.carregar_extras(cfg)
     met = grafo.carregar_metricas(cfg)
     _p(f"tabelas incluidas sob demanda: {len(extras)} | metricas do grafo: {met.get('gerado_em', 'nenhuma (rode /atualizar)')}")

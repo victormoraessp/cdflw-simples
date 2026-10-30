@@ -44,7 +44,10 @@ flowchart LR
 
 Python 3.11+ com `openpyxl` e `networkx` (`pip install openpyxl networkx`); `databricks-sdk` já vem
 com o Databricks Connect. VS Code com GitHub Copilot Chat e a extensão Databricks conectada na raiz
-do repositório (é dela que o cdflw lê profile e cluster, em `.databricks\project.json`).
+do repositório: é dela que o cdflw lê profile e cluster, em `.databricks\project.json` ou, no modo bundle,
+em `.databricks\.databricks.env` (o profile é o do `~\.databrickscfg` com o mesmo host). Se o `instalar`
+ou o `status` avisar "profile ... nao existe em ~/.databrickscfg", fixe o seu com
+`python -m cdflw configurar --local --profile <nome>`.
 
 ## Primeira vez
 
